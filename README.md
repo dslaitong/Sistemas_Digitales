@@ -1,2 +1,6 @@
 # Sistemas_Digitales
-# integrantes
+## integrantes
+[David Santiago Laiton Gutierrez](https://github.com/dslaitong)
+[Edgar Giovanii Neira Lugo](https://)
+[Johana Stephany Toro Echeverria](https://)
+[Daniel Ricardo Roa Rozo](https://)
