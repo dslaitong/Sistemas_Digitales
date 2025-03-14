@@ -12,5 +12,3 @@ Este es un programa en Python que permite gestionar un directorio telefónico ut
 
 ---
 
-
----
