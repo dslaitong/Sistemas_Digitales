@@ -1,4 +1,7 @@
-# Lista para almacenar la base de datos de personas
+# Directorio Telefónico usando Listas y Diccionarios en Python
+
+# Lista para almacenar la base de datos de personas (diccionarios)
+
 directorio = []
 
 # Lista de textos para mostrar en pantalla
