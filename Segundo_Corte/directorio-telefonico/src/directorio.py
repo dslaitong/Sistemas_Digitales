@@ -1,65 +1,190 @@
-class Contacto:
-    def __init__(self, id, nombre, telefono, fecha_nacimiento, correo, area):
-        self.id = id
-        self.nombre = nombre
-        self.telefono = telefono
-        self.fecha_nacimiento = fecha_nacimiento
-        self.correo = correo
-        self.area = area
+import json
+import re
+from datetime import datetime
+from contacto import Contacto
 
-    def __str__(self):
-        return f"ID: {self.id}, Nombre: {self.nombre}, Teléfono: {self.telefono}, Fecha de Nacimiento: {self.fecha_nacimiento}, Correo: {self.correo}, Área: {self.area}"
-
-
-class Directorio:
+class ContactManager:
     def __init__(self):
-        self.contactos = []
-        self.indice_telefonos = {}
-        self.indice_ids = {}
-        self.indice_areas = {}
-        self.areas = set()
+        self.contacts = []
+        self.phone_index = {}
+        self.id_index = {}
+        self.area_index = {}
+        self.valid_areas = ["Ventas", "Soporte", "Desarrollo", "Marketing", "Recursos Humanos"]
 
-    def agregar_contacto(self, contacto):
-        if contacto.telefono in self.indice_telefonos:
-            raise ValueError("El teléfono ya está registrado.")
-        if contacto.id in self.indice_ids:
-            raise ValueError("El ID ya está registrado.")
+    def display_menu(self):
+        while True:
+            print("\n--- Gestor de Contactos ---")
+            print("1. Añadir nuevo contacto")
+            print("2. Buscar por teléfono")
+            print("3. Buscar por ID")
+            print("4. Buscar por área")
+            print("5. Eliminar por ID")
+            print("6. Eliminar por área")
+            print("7. Eliminar por teléfono")
+            print("8. Mostrar todos")
+            print("9. Guardar datos")
+            print("10. Cargar datos")
+            print("11. Salir")
+            
+            choice = input("Seleccione una opción: ")
+            
+            if choice == "1":
+                self.add_contact()
+            elif choice == "2":
+                self.search_by_phone()
+            elif choice == "3":
+                self.search_by_id()
+            elif choice == "4":
+                self.search_by_area()
+            elif choice == "5":
+                self.remove_by_id()
+            elif choice == "6":
+                self.remove_by_area()
+            elif choice == "7":
+                self.remove_by_phone()
+            elif choice == "8":
+                self.show_all()
+            elif choice == "9":
+                self.save_data()
+            elif choice == "10":
+                self.load_data()
+            elif choice == "11":
+                break
+            else:
+                print("Opción no válida. Intente nuevamente.")
+
+    def add_contact(self):
+        contact_data = {
+            'id': input("Ingrese el ID del contacto: "),
+            'nombre': input("Ingrese el nombre completo: "),
+            'telefono': input("Ingrese el número de teléfono (10 dígitos): "),
+            'fecha_nacimiento': input("Ingrese la fecha de nacimiento (YYYY-MM-DD): "),
+            'correo': input("Ingrese el correo electrónico: ")
+        }
         
-        self.contactos.append(contacto)
-        self.indice_telefonos[contacto.telefono] = contacto
-        self.indice_ids[contacto.id] = contacto
-        self.indice_areas.setdefault(contacto.area, []).append(contacto)
-        self.areas.add(contacto.area)
+        if not self._validate_phone(contact_data['telefono']):
+            print("Número de teléfono inválido.")
+            return
+        if not self._validate_email(contact_data['correo']):
+            print("Correo electrónico inválido.")
+            return
+        if not self._validate_birthdate(contact_data['fecha_nacimiento']):
+            print("Fecha de nacimiento inválida.")
+            return
+        
+        self._show_areas()
+        area_choice = int(input("Seleccione el área (número): ")) - 1
+        contact_data['area'] = self.valid_areas[area_choice]
+        
+        new_contact = Contacto(**contact_data)
+        self._add_to_indexes(new_contact)
+        print("Contacto añadido exitosamente.")
 
-    def buscar_contacto(self, id=None, telefono=None):
-        if id:
-            return self.indice_ids.get(id, None)
-        if telefono:
-            return self.indice_telefonos.get(telefono, None)
-        return None
+    def _show_areas(self):
+        print("\nÁreas disponibles:")
+        for idx, area in enumerate(self.valid_areas, 1):
+            print(f"{idx}. {area}")
 
-    def eliminar_contacto(self, id):
-        contacto = self.indice_ids.pop(id, None)
-        if contacto:
-            self.contactos.remove(contacto)
-            del self.indice_telefonos[contacto.telefono]
-            self.indice_areas[contacto.area].remove(contacto)
-            if not self.indice_areas[contacto.area]:
-                del self.indice_areas[contacto.area]
-                self.areas.remove(contacto.area)
+    def _add_to_indexes(self, contact):
+        self.contacts.append(contact)
+        self.phone_index[contact.telefono] = contact
+        self.id_index[contact.id] = contact
+        
+        if contact.area not in self.area_index:
+            self.area_index[contact.area] = []
+        self.area_index[contact.area].append(contact)
 
-    def mostrar_contactos(self):
-        return [str(contacto) for contacto in self.contactos]
+    def search_by_phone(self):
+        phone = input("Ingrese el número de teléfono: ")
+        contact = self.phone_index.get(phone)
+        print(contact if contact else "Contacto no encontrado.")
 
-    def cargar_contactos(self, archivo):
-        import json
-        with open(archivo, 'r') as f:
-            datos = json.load(f)
-            for dato in datos:
-                contacto = Contacto(**dato)
-                self.agregar_contacto(contacto)
+    def search_by_id(self):
+        id = input("Ingrese el ID: ")
+        contact = self.id_index.get(id)
+        print(contact if contact else "Contacto no encontrado.")
 
-    def guardar_contactos(self, archivo):
-        import json
-        with open(archivo, 'w') as f:
-            json.dump([contacto.__dict__ for contacto in self.contactos], f)
+    def search_by_area(self):
+        area = input("Ingrese el área: ")
+        contacts = self.area_index.get(area, [])
+        if contacts:
+            for contact in contacts:
+                print(contact)
+        else:
+            print("No hay contactos en esa área.")
+
+    def remove_by_id(self):
+        id = input("Ingrese el ID: ")
+        contact = self.id_index.get(id)
+        if contact:
+            self._remove_contact(contact)
+            print("Contacto eliminado exitosamente.")
+        else:
+            print("Contacto no encontrado.")
+
+    def remove_by_phone(self):
+        phone = input("Ingrese el número de teléfono: ")
+        contact = self.phone_index.get(phone)
+        if contact:
+            self._remove_contact(contact)
+            print("Contacto eliminado exitosamente.")
+        else:
+            print("Contacto no encontrado.")
+
+    def remove_by_area(self):
+        print("Áreas disponibles:", ", ".join(self.valid_areas))
+        area = input("Ingrese el área que desea eliminar: ")
+        if area in self.area_index:
+            for contact in self.area_index[area][:]:
+                self._remove_contact(contact)
+            print(f"Todos los contactos del área '{area}' han sido eliminados.")
+        else:
+            print(f"No hay contactos en el área '{area}'.")
+
+    def _remove_contact(self, contact):
+        self.contacts.remove(contact)
+        del self.phone_index[contact.telefono]
+        del self.id_index[contact.id]
+        self.area_index[contact.area].remove(contact)
+        if not self.area_index[contact.area]:
+            del self.area_index[contact.area]
+
+    def show_all(self):
+        if not self.contacts:
+            print("No hay contactos registrados.")
+            return
+            
+        for contact in sorted(self.contacts, key=lambda x: x.nombre):
+            print(contact)
+
+    def save_data(self):
+        filename = input("Ingrese el nombre del archivo: ")
+        data = [vars(contact) for contact in self.contacts]
+        with open(filename, 'w') as f:
+            json.dump(data, f)
+        print("Datos guardados exitosamente.")
+
+    def load_data(self):
+        filename = input("Ingrese el nombre del archivo: ")
+        try:
+            with open(filename, 'r') as f:
+                data = json.load(f)
+            for contact_data in data:
+                contact = Contacto(**contact_data)
+                self._add_to_indexes(contact)
+            print("Datos cargados exitosamente.")
+        except FileNotFoundError:
+            print("Archivo no encontrado.")
+
+    def _validate_phone(self, phone):
+        return re.match(r"^\d{10}$", phone) is not None
+
+    def _validate_email(self, email):
+        return re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email) is not None
+
+    def _validate_birthdate(self, date):
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+            return True
+        except ValueError:
+            return False

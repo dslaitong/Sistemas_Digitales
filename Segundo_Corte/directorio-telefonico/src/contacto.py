@@ -8,4 +8,5 @@ class Contacto:
         self.area = area
 
     def __str__(self):
-        return f"ID: {self.id}, Nombre: {self.nombre}, Teléfono: {self.telefono}, Fecha de Nacimiento: {self.fecha_nacimiento}, Correo: {self.correo}, Área: {self.area}"
+        return (f"ID: {self.id}\nNombre: {self.nombre}\nTeléfono: {self.telefono}\n"
+                f"Fecha Nacimiento: {self.fecha_nacimiento}\nCorreo: {self.correo}\nÁrea: {self.area}\n")
