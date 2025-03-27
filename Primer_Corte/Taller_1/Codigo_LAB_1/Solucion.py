@@ -33,6 +33,7 @@ def agregar_persona():
     correo = input(textos[3])
     persona = {"nombre": nombre, "telefono": telefono, "cumpleaños": cumpleaños, "correo": correo}
     directorio.append(persona)  # Agregar el diccionario a la lista
+    print("la nueva persona es: ",persona)
     print(textos[7])
 
 def buscar_por_telefono():
